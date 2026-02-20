@@ -1,6 +1,10 @@
 import { Link } from 'expo-router';
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { auth } from '../services/firebaseConfig';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { useRouter } from 'expo-router';
+
 
 export default function LoginScreen() {
   // Estados para armazenar os valores digitados
@@ -8,14 +12,28 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
 
-  // Função para simular o envio do formulário
-  const handleLogin= () => {
-    if ( !email || !senha) {
+  const router = useRouter()//hook de navegação
+
+  const handleLogin = async () => {
+    if (!email || !senha) {
       Alert.alert('Atenção', 'Preencha todos os campos!');
       return;
     }
-    Alert.alert('Sucesso ao logar', `Usuário logado com sucesso!`);
-    // Aqui você poderia fazer um fetch/axios para enviar ao backend
+
+    try {
+      await signInWithEmailAndPassword(auth, email, senha);
+      Alert.alert('Sucesso', 'Usuário logado com sucesso!');
+      router.replace('/Home'); // Redireciona para a Home após o login
+    } catch (error: any) {
+      console.error(error);
+      let mensagem = 'Ocorreu um erro ao tentar fazer login.';
+      if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
+        mensagem = 'E-mail ou senha inválidos.';
+      } else if (error.code === 'auth/invalid-email') {
+        mensagem = 'E-mail inválido.';
+      }
+      Alert.alert('Erro no Login', mensagem);
+    }
   };
 
   return (
@@ -49,7 +67,7 @@ export default function LoginScreen() {
         <Text style={styles.textoBotao}>Login</Text>
       </TouchableOpacity>
 
-      <Link href="CadastrarScreen" style={{marginTop:20,color:'white',marginLeft:150}}>Cadastre-se</Link>
+      <Link href="CadastrarScreen" style={{ marginTop: 20, color: 'white', marginLeft: 150 }}>Cadastre-se</Link>
     </View>
   );
 }
