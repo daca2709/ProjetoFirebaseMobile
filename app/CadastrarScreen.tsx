@@ -1,7 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Platform } from 'react-native';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../services/firebaseConfig';
+
+import { useRouter } from 'expo-router';
 
 export default function CadastroScreen() {
+  const router = useRouter();
   // Estados para armazenar os valores digitados
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
@@ -10,10 +15,32 @@ export default function CadastroScreen() {
   // Função para simular o envio do formulário
   const handleCadastro = () => {
     if (!nome || !email || !senha) {
-      Alert.alert('Atenção', 'Preencha todos os campos!');
+      if (Platform.OS === 'web') {
+        alert('Atenção: Preencha todos os campos!');
+      } else {
+        Alert.alert('Atenção', 'Preencha todos os campos!');
+      }
       return;
     }
-    Alert.alert('Sucesso', `Usuário ${nome} cadastrado com sucesso!`);
+    createUserWithEmailAndPassword(auth, email, senha)
+      .then((userCredential) => {
+        const user = userCredential.user;
+        if (Platform.OS === 'web') {
+          alert(`Sucesso: Usuário ${nome} cadastrado com sucesso!`);
+        } else {
+          Alert.alert('Sucesso', `Usuário ${nome} cadastrado com sucesso!`);
+        }
+        router.replace('/Home');
+      })
+      .catch((error) => {
+        const errorCode = error.code;
+        const errorMessage = error.message;
+        if (Platform.OS === 'web') {
+          alert(`Erro: ${errorMessage}`);
+        } else {
+          Alert.alert('Erro', errorMessage);
+        }
+      });
     // Aqui você poderia fazer um fetch/axios para enviar ao backend
   };
 
